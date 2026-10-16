@@ -1,0 +1,443 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Web Hub - Domain Launcher</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+header {
+  text-align: center;
+  padding: 35px 15px 15px;
+}
+h1 {
+  color: #38bdf8;
+  margin-bottom: 8px;
+}
+.subtitle {
+  color: #94a3b8;
+}
+.container {
+  max-width: 1050px;
+  margin: auto;
+  padding: 20px;
+}
+.search-area {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: #1e293b;
+  color: white;
+  font-size: 16px;
+}
+button {
+  background: #0284c7;
+  color: white;
+  border: 0;
+  padding: 13px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+}
+button:hover {
+  background: #0369a1;
+}
+.add-panel {
+  background: #1e293b;
+  padding: 18px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+}
+.add-panel h3 {
+  margin-top: 0;
+}
+.add-fields {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.add-fields input {
+  flex: 1 1 220px;
+}
+.grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fill, minmax(150px, 1fr));
+  gap: 18px;
+}
+.card {
+  position: relative;
+  background: #1e293b;
+  padding: 25px 12px 18px;
+  text-align: center;
+  border-radius: 15px;
+  transition: 0.2s;
+  overflow-wrap: anywhere;
+}
+.card:hover {
+  transform: translateY(-4px);
+  background: #334155;
+}
+.card a {
+  color: white;
+  text-decoration: none;
+}
+.card img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+.card-name {
+  font-weight: bold;
+}
+.delete {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  background: #be123c;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+.delete:hover {
+  background: #e11d48;
+}
+#message {
+  min-height: 22px;
+  color: #7dd3fc;
+}
+footer {
+  text-align: center;
+  color: #94a3b8;
+  padding: 35px 10px;
+}
+@media(max-width: 600px) {
+  .search-area {
+    flex-direction: column;
+  }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>🌐 My Web Hub</h1>
+  <p class="subtitle">
+    Search, add and launch your favorite websites
+  </p>
+</header>
+
+<main class="container">
+
+  <div class="search-area">
+    <input
+      id="search"
+      placeholder="Search Google, YouTube, Instagram..."
+      aria-label="Search websites"
+    >
+    <button onclick="searchOrAdd()">Search / Add</button>
+  </div>
+
+  <p id="message" role="status"></p>
+
+  <div class="add-panel">
+    <h3>➕ Add New Website</h3>
+    <div class="add-fields">
+      <input
+        id="siteName"
+        placeholder="Website name (optional)"
+        aria-label="Website name"
+      >
+      <input
+        id="siteURL"
+        placeholder="example.com"
+        aria-label="Website domain"
+      >
+      <button onclick="addWebsite()">Add Website</button>
+    </div>
+  </div>
+
+  <h2>My Websites</h2>
+  <div id="websiteGrid" class="grid"></div>
+
+</main>
+
+<footer>
+  My Web Hub | Personal Website Launcher
+</footer>
+
+<script>
+const defaults = [
+  {name:"Google", url:"https://google.com"},
+  {name:"YouTube", url:"https://youtube.com"},
+  {name:"Instagram", url:"https://instagram.com"},
+  {name:"Facebook", url:"https://facebook.com"},
+  {name:"ChatGPT", url:"https://chatgpt.com"},
+  {name:"Claude", url:"https://claude.ai"},
+  {name:"Groww", url:"https://groww.in"}
+];
+
+const catalog = {
+  google: "google.com",
+  youtube: "youtube.com",
+  instagram: "instagram.com",
+  facebook: "facebook.com",
+  chatgpt: "chatgpt.com",
+  claude: "claude.ai",
+  groww: "groww.in",
+  gmail: "gmail.com",
+  whatsapp: "web.whatsapp.com",
+  amazon: "amazon.in",
+  flipkart: "flipkart.com",
+  netflix: "netflix.com",
+  github: "github.com",
+  linkedin: "linkedin.com",
+  reddit: "reddit.com",
+  wikipedia: "wikipedia.org"
+};
+
+function loadSites() {
+  try {
+    const stored = localStorage.getItem("myWebsites");
+    return stored === null ? [...defaults] :
+      JSON.parse(stored);
+  } catch {
+    return [...defaults];
+  }
+}
+
+let websites = loadSites();
+
+function save() {
+  localStorage.setItem(
+    "myWebsites", JSON.stringify(websites)
+  );
+}
+
+function normalizeURL(value) {
+  value = value.trim();
+
+  if (!value) throw Error("Enter a domain.");
+
+  if (!/^https?:\/\//i.test(value)) {
+    value = "https://" + value;
+  }
+
+  const parsed = new URL(value);
+
+  if (
+    !["http:", "https:"].includes(parsed.protocol) ||
+    !parsed.hostname.includes(".") ||
+    parsed.username ||
+    parsed.password
+  ) {
+    throw Error("Enter a valid public website URL.");
+  }
+
+  return parsed.href;
+}
+
+function getName(url) {
+  const host = new URL(url).hostname
+    .replace(/^www\./, "");
+
+  const part = host.split(".")[0];
+
+  return part.charAt(0).toUpperCase() +
+    part.slice(1);
+}
+
+function showMessage(text) {
+  document.getElementById("message")
+    .textContent = text;
+}
+
+function render(filter = "") {
+  const grid = document.getElementById("websiteGrid");
+  grid.replaceChildren();
+
+  const filtered = websites
+    .map((site, index) => ({...site, index}))
+    .filter(site =>
+      site.name.toLowerCase().includes(
+        filter.toLowerCase()
+      ) ||
+      site.url.toLowerCase().includes(
+        filter.toLowerCase()
+      )
+    );
+
+  if (!filtered.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No matching websites.";
+    grid.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(site => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const link = document.createElement("a");
+    link.href = site.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    const img = document.createElement("img");
+    const domain = new URL(site.url).hostname;
+
+    img.src = "https://www.google.com/s2/favicons?domain=" +
+      encodeURIComponent(domain) + "&sz=64";
+    img.alt = "";
+
+    const title = document.createElement("div");
+    title.className = "card-name";
+    title.textContent = site.name;
+
+    link.append(img, title);
+
+    const remove = document.createElement("button");
+    remove.className = "delete";
+    remove.textContent = "×";
+    remove.setAttribute(
+      "aria-label", "Delete " + site.name
+    );
+    remove.onclick = () => deleteWebsite(site.index);
+
+    card.append(link, remove);
+    grid.appendChild(card);
+  });
+}
+
+function insertWebsite(name, url) {
+  const normalized = normalizeURL(url);
+
+  if (websites.some(site =>
+    site.url === normalized
+  )) {
+    showMessage("This website is already added.");
+    return false;
+  }
+
+  websites.push({
+    name: name.trim() || getName(normalized),
+    url: normalized
+  });
+
+  save();
+  render();
+  showMessage("Website added successfully!");
+  return true;
+}
+
+function addWebsite() {
+  const nameInput = document.getElementById("siteName");
+  const urlInput = document.getElementById("siteURL");
+
+  try {
+    if (insertWebsite(nameInput.value, urlInput.value)) {
+      nameInput.value = "";
+      urlInput.value = "";
+    }
+  } catch (error) {
+    showMessage(error.message);
+  }
+}
+
+function searchOrAdd() {
+  const input = document.getElementById("search");
+  const term = input.value.trim();
+
+  if (!term) {
+    render();
+    showMessage("Enter a website name or domain.");
+    return;
+  }
+
+  const matches = websites.filter(site =>
+    site.name.toLowerCase().includes(term.toLowerCase()) ||
+    site.url.toLowerCase().includes(term.toLowerCase())
+  );
+
+  if (matches.length) {
+    render(term);
+    showMessage(matches.length + " website(s) found.");
+    return;
+  }
+
+  const known = catalog[term.toLowerCase()];
+
+  if (known) {
+    insertWebsite(term, known);
+    input.value = "";
+    return;
+  }
+
+  if (
+    term.includes(".") &&
+    !term.includes(" ")
+  ) {
+    try {
+      insertWebsite("", term);
+      input.value = "";
+    } catch (error) {
+      showMessage(error.message);
+    }
+    return;
+  }
+
+  showMessage(
+    "Website not found. Enter its domain below, " +
+    "or try a known website name."
+  );
+}
+
+function deleteWebsite(index) {
+  if (!confirm(
+    "Remove " + websites[index].name + "?"
+  )) return;
+
+  websites.splice(index, 1);
+  save();
+  render(
+    document.getElementById("search").value.trim()
+  );
+  showMessage("Website removed.");
+}
+
+document.getElementById("search")
+  .addEventListener("input", event => {
+    render(event.target.value);
+  });
+
+document.getElementById("search")
+  .addEventListener("keydown", event => {
+    if (event.key === "Enter") searchOrAdd();
+  });
+
+document.getElementById("siteURL")
+  .addEventListener("keydown", event => {
+    if (event.key === "Enter") addWebsite();
+  });
+
+render();
+</script>
+</body>
+</html>
