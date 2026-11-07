@@ -1,9 +1,10 @@
-const CACHE_NAME = "mywebhub-v2";
+const CACHE_NAME = "mywebhub-v3";
 
 const APP_FILES = [
   "/",
   "/index.html",
   "/manifest.json",
+  "/privacy.html",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
