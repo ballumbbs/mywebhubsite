@@ -1,8 +1,9 @@
 
 {
-  "name": "MyWebHubSite",
+  "id": "/",
+  "name": "My Web Hub",
   "short_name": "MyWebHub",
-  "description": "My personal website launcher",
+  "description": "Search, add and launch your favorite websites",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -12,12 +13,14 @@
     {
       "src": "./icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "./icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

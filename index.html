@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -128,6 +127,29 @@ footer {
   color: #94a3b8;
   padding: 35px 10px;
 }
+.install-btn {
+  margin-top: 14px;
+  background: #16a34a;
+  font-weight: bold;
+}
+.install-btn:hover {
+  background: #15803d;
+}
+.install-help {
+  display: none;
+  max-width: 520px;
+  margin: 14px auto 0;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px 18px;
+  text-align: left;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+.install-help.show {
+  display: block;
+}
 @media(max-width: 600px) {
   .search-area {
     flex-direction: column;
@@ -137,6 +159,10 @@ footer {
 
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0f172a">
+<link rel="icon" type="image/png" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="My Web Hub">
 
 </head>
 
@@ -146,6 +172,10 @@ footer {
   <p class="subtitle">
     Search, add and launch your favorite websites
   </p>
+  <button id="installBtn" class="install-btn" hidden>
+    ⬇ Install on Desktop / Phone
+  </button>
+  <div id="installHelp" class="install-help" role="note"></div>
 </header>
 
 <main class="container">
@@ -445,6 +475,72 @@ render();
 </script>
   
 <script>
+// ---- Install as app / desktop shortcut ----
+let installPrompt = null;
+const installBtn = document.getElementById("installBtn");
+const installHelp = document.getElementById("installHelp");
+
+function isInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+}
+
+function helpText() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/i.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+    return "<b>iPhone / iPad:</b> tap the <b>Share</b> button " +
+      "(square with arrow) in Safari, then choose " +
+      "<b>Add to Home Screen</b>.";
+  }
+  if (/Firefox/i.test(ua)) {
+    return "<b>Firefox:</b> Firefox can't install websites as apps. " +
+      "Open <b>mywebhubsite.com</b> in Chrome or Edge and press this " +
+      "button again, or drag the 🔒 icon from the address bar onto " +
+      "your desktop to make a shortcut.";
+  }
+  if (/Safari/i.test(ua) && !/Chrome|Chromium|Edg/i.test(ua)) {
+    return "<b>Safari on Mac:</b> open the <b>File</b> menu (or Share " +
+      "button) and choose <b>Add to Dock</b>.";
+  }
+  return "<b>Chrome / Edge:</b> click the install icon (⊕ or 🖥) at the " +
+    "right end of the address bar, or open the ⋮ menu and choose " +
+    "<b>Cast, save and share → Install page as app</b> " +
+    "(Edge: <b>Apps → Install this site as an app</b>). " +
+    "A <b>My Web Hub</b> shortcut will appear on your desktop.";
+}
+
+if (!isInstalled()) {
+  installBtn.hidden = false;
+}
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  installPrompt = event;
+  installBtn.hidden = false;
+});
+
+installBtn.addEventListener("click", async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    installPrompt = null;
+    if (choice.outcome === "accepted") {
+      installBtn.hidden = true;
+      installHelp.classList.remove("show");
+    }
+    return;
+  }
+  installHelp.innerHTML = helpText();
+  installHelp.classList.toggle("show");
+});
+
+window.addEventListener("appinstalled", () => {
+  installBtn.hidden = true;
+  installHelp.classList.remove("show");
+  showMessage("My Web Hub installed! Look for it on your desktop.");
+});
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
